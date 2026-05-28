@@ -1,40 +1,41 @@
 FROM ubuntu:22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Установка зависимостей
-RUN apt-get update && apt-get install -y \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
+RUN apt update && apt install -y \
+    curl \
+    gnupg \
+    ca-certificates \
+    libgtk-3-0 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
     libxcomposite1 \
+    libasound2 \
     libxdamage1 \
     libxrandr2 \
-    libgbm1 \
-    libxss1 \
-    libasound2 \
-    libpangocairo-1.0-0 \
-    libpango-1.0-0 \
-    libatspi2.0-0 \
-    libwayland-egl1 \
-    libwayland-client0 \
-    libwayland-cursor0 \
-    libwayland-server0 \
-    x11-xserver-utils \
-    dbus-x11 \
-    pulseaudio \
+    libpulse0 \
+    libsecret-1-0 \
+    libnotify4 \
+    libnss3 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Копируем DEB пакет
-COPY MAX.deb /tmp/MAX.deb
+# Добавление репозитория MAX
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.max.ru/linux/deb/public.asc | gpg --dearmor -o /etc/apt/keyrings/max.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/max.gpg] https://download.max.ru/linux/deb stable main" > /etc/apt/sources.list.d/max.list
 
-# Устанавливаем MAX
-RUN apt update && apt install -y /tmp/MAX.deb
+# Установка MAX
+RUN apt update \
+    && apt install -y max \
+    && apt clean
 
-USER root
-WORKDIR /root
+# Создание пользователя
+RUN useradd -m -u 1000 -s /bin/bash user
 
-# Запускаем MAX
-CMD ["MAX", "--no-sandbox"]
+WORKDIR /home/user
+USER user
+
+CMD ["max"]
